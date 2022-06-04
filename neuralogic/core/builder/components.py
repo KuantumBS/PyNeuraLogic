@@ -7,10 +7,44 @@ from neuralogic.utils.visualize import draw_sample
 
 
 class RawSample:
-    __slots__ = "java_sample"
+    __slots__ = "java_sample", "fact_cache"
 
     def __init__(self, sample):
         self.java_sample = sample
+        self.fact_cache = {}
+
+    def set_output(self, value) -> None:
+        self.java_sample.target.set(0, value)
+        self.java_sample.query.neuron.getRawState().getValue().set(0, value)
+
+    def _find_fact(self, fact_str):
+        for sample_fact in self.java_sample.query.evidence.allNeuronsTopologic:
+            if str(sample_fact.getClass().getSimpleName()) != "FactNeuron":
+                continue
+
+            if str(sample_fact.name).split(":")[-1].strip() == fact_str:
+                self.fact_cache[fact_str] = sample_fact
+                return sample_fact
+        return None
+
+    def get_fact(self, fact):
+        fact_str = fact.to_str()
+
+        if fact_str in self.fact_cache:
+            return self.fact_cache[fact_str]
+        return self._find_fact(fact_str)
+
+    def set_fact_value(self, fact, value) -> int:
+        fact_str = fact.to_str()
+
+        if fact_str in self.fact_cache:
+            sample_fact = self.fact_cache[fact_str]
+            sample_fact.getRawState().getValue().set(0, value)
+            return sample_fact.index
+
+        sample_fact = self._find_fact(fact_str)
+        sample_fact.getRawState().getValue().set(0, value)
+        return sample_fact.index
 
     def draw(
         self,

@@ -4,6 +4,7 @@ from typing import Dict, Sized, Union, List
 import jpype
 
 from neuralogic import is_initialized, initialize
+from neuralogic.core import JavaFactory
 from neuralogic.nn.base import AbstractNeuraLogic
 from neuralogic.core.settings import SettingsProxy
 from neuralogic.core.enums import Backend
@@ -93,7 +94,7 @@ class NeuraLogic(AbstractNeuraLogic):
                 if auto_backprop:
                     result = self.strategy.learnSample(samples.java_sample)
                     return json.loads(str(result)), 1
-                result = self.strategy.evaluateSample(samples.java_sample)
+                result = self.strategy.learnSample(samples.java_sample)
                 return LossResult(result, self.number_format)
             return json.loads(str(self.strategy.evaluateSample(samples.java_sample)))
 
@@ -107,6 +108,16 @@ class NeuraLogic(AbstractNeuraLogic):
 
         results = self.strategy.evaluateSamples(jpype.java.util.ArrayList([sample.java_sample for sample in samples]))
         return json.loads(str(results))
+
+    def backprop(self, sample, gradient):
+        trainer = self.strategy.trainer
+        _, gradient_value = JavaFactory().get_value(gradient)
+
+        backpropagation = trainer.getBackpropagation()
+        weight_updater = backpropagation.backpropagate(sample.java_sample, gradient_value)
+        state_index = backpropagation.backproper
+
+        return state_index, weight_updater
 
     def state_dict(self) -> Dict:
         weights = self.neural_model.getAllWeights()
