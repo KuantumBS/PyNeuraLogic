@@ -1,4 +1,5 @@
 import json
+from typing import Callable
 
 import torch
 from torch import nn
@@ -43,7 +44,7 @@ class NeuraLogicFunction(Function):
         dtype = ctx.dtype
 
         gradients = tuple(
-            torch.tensor(
+            -torch.tensor(
                 json.loads(
                     str(sample.get_fact(fact).getComputationView(state_index).getGradient().toString(number_format))
                 ),
@@ -59,7 +60,7 @@ class NeuraLogicFunction(Function):
 
 
 class NeuraLogic(nn.Module):
-    def __init__(self, template: Template, settings: Settings, dtype=torch.float32):
+    def __init__(self, template: Template, to_logic: Callable, settings: Settings, dtype=torch.float32):
         super(NeuraLogic, self).__init__()
 
         self.model = template.build(settings)
@@ -67,9 +68,7 @@ class NeuraLogic(nn.Module):
         self.dtype = dtype
 
         self.internal_weights = nn.Parameter(torch.empty((0,)))
-
-    def to_logic(self, *inputs):
-        raise NotImplementedError
+        self.to_logic = to_logic
 
     def forward(self, *inputs):
         mapping = self.to_logic(*inputs)

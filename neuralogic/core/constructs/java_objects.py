@@ -87,7 +87,7 @@ class JavaFactory:
 
         weight = None
         if isinstance(atom, self.weighted_atom_type):
-            weight = self.get_weight(atom.weight, atom.weight_name, atom.is_fixed or is_example)
+            weight = self.get_weight(atom.weight, atom.weight_name, atom.is_fixed)
         elif default_weight is not None:
             weight = self.get_weight(default_weight, None, True)
 
